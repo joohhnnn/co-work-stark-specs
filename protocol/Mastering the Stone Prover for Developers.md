@@ -10,13 +10,16 @@
 
 ```mermaid
 flowchart LR
-    subgraph L2[Starknet L2]
-        A[用户交易\n(Cairo 程序)] --> B[Sequencer\n执行 & 产出 Trace]
-        B --> C[Stone Prover\n生成 STARK 证明]
-        C --> D[SHARP\n递归聚合多个证明]
+    %% L2 子图
+    subgraph L2["Starknet L2"]
+        A["用户交易<br/>(Cairo 程序)"] --> B["Sequencer<br/>执行 & 产出 Trace"]
+        B --> C["Stone Prover<br/>生成 STARK 证明"]
+        C --> D["SHARP<br/>递归聚合多个证明"]
     end
-    D --> E["以太坊 L1\nVerifier 合约"]
-    E --> F[确认状态根\n& 发布有效性事件]
+
+    %% L1 验证
+    D --> E["以太坊 L1<br/>Verifier 合约"]
+    E --> F["确认状态根<br/>& 发布有效性事件"]
 ```
 
 1. **用户层** 开发者或 dApp 后端将业务逻辑写成 Cairo 程序并发起交易。
