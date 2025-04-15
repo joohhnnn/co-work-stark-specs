@@ -1,5 +1,14 @@
 # Starknet Sequencer 交易处理流程代码解析
 
+## 摘要
+
+本文对应整体流程的第 3-4 步：
+
+* **交易排队 (Step 3 & 4)**：交易先进入 `TransactionQueue`，按 gas 价格及账户顺序排序，分优先与待处理两条队列。
+* **批量处理 (Step 4)**：区块构建器每次从队列弹出一批交易，批量执行；成功交易写入 `execution_infos`，失败交易写入 `rejected_tx_hashes`。
+
+下文通过源码展示这一过程的实现细节。
+
 starkware-libs/sequencer 仓库中与交易排队、处理和区块填充相关的代码实现。
 
 ## 交易排队（Transactions line up in groups）
@@ -42,6 +51,12 @@ pub fn pop_ready_chunk(&mut self, n_txs: usize) -> Vec<TransactionReference> {
 }
 ```
 
+**关键点解析（TransactionQueue::pop_ready_chunk）**
+
+* 仅从 `priority_queue` 中弹出，确保高费用交易优先。
+* `pop_last()` 每次取出集合尾部（即最高 tip）的交易，天然按费用降序。
+* 弹出后立刻从 `address_to_tx` 中删除，保证同一账户只能有一笔待执行交易。
+
 ## 交易处理和失败交易标记（Rejected or failed transactions are flagged）
 
 在区块构建过程中，collect_execution_results_and_stream_txs 函数负责处理交易执行结果并标记失败的交易：
@@ -77,11 +92,14 @@ match result {
 }
 ```
 
-这段代码明确显示：
+**关键点解析（collect_execution_results_and_stream_txs）**
 
-- 成功的交易被添加到 execution_infos 中，准备被填入区块
-- 失败的交易被标记并添加到 rejected_tx_hashes 集合中
-- 如果配置为失败即终止(fail_on_err)，则会抛出错误；否则只是标记交易被拒绝并继续处理其他交易
+1. 成功路径：
+   * 汇总 `l2_gas_used`，为 fee market & gas price 调整做数据基础。
+   * `execution_infos` 保存成功交易的详细执行信息，后续写入区块与生成证明都要用到。
+2. 失败路径：
+   * 失败交易哈希写入 `rejected_tx_hashes`，方便 mempool 重新调度或客户端查询失败原因。
+   * 如果 `fail_on_err` 打开，则区块构建立即终止并回滚，常用于单元测试或 dev 网络。
 
 ## 区块填充（They fill a block along with hundreds of other transactions）
 
@@ -139,12 +157,13 @@ async fn build_block(&mut self) -> BlockBuilderResult<BlockExecutionArtifacts> {
 }
 ```
 
-这个方法展示了整个区块构建过程：
+**关键点解析（BlockBuilder::build_block）**
 
-- 循环获取交易批次并处理，直到区块满了或达到截止时间
-- 每一批交易通过 collect_execution_results_and_stream_txs 函数处理
-- 成功的交易添加到执行信息集合中
-- 最终生成包含所有成功执行的交易的区块构件
+* "外层 while + 内层批处理" 结构，兼顾 **吞吐量** 与 **延迟**：
+  * 超时 (`deadline`) 或 `abort_signal` 触发时立即停止，避免长时间锁占用。
+  * 每批交易大小 `tx_chunk_size` 可动态配置，精细控制并发度。
+* 通过 `collect_execution_results_and_stream_txs` 将执行结果转为区块内部中间状态；该函数返回布尔值 `block_is_full` 以指示是否已达到区块 gas 上限。
+* 最终产出的 `BlockExecutionArtifacts` 既包含 state diff，又包含 gas 统计、Cairo CASM 哈希等，为 Prover 打包数据提供一站式输入。
 
 ## 区块的封装和批准
 
@@ -230,14 +249,13 @@ async fn commit_proposal_and_block(
 }
 ```
 
-这个方法是在共识达成后由 `decision_reached` 方法调用的，整个过程实际上就是区块被"sealed and approved"的实现。方法执行以下关键步骤：
+**关键点解析（Batcher::commit_proposal_and_block）**
 
-- 将区块提案（proposal）和状态差异（state diff）提交到存储
-- 通知 L1 提供者（L1 provider）关于新区块
-- 通知内存池（mempool）关于新区块
-- 递增存储高度计数器
-
-在这个过程中，如果提交到 L1 提供者失败，它会回滚状态差异并返回错误。
+* 事务式处理流程：先写本地存储，再通知外部组件（L1 Provider、Mempool），任何一步失败都会回滚或记录错误，确保 **原子性**。  
+* `rejected_l1_handler_tx_hashes` 通过交集过滤，只向 L1 报告真正被拒绝且已消费的系统交易，避免冗余数据。  
+* 对 L1 Provider 的错误分类处理：`UnexpectedHeight` 单独日志，方便定位高度不一致问题；其他错误统一回滚并返回 `InternalError`。  
+* `STORAGE_HEIGHT.increment(1)` 作为 Prometheus 计数器，记录链上高度推进速率。  
+* TODO 注释提示：若通知 mempool 失败，目前仅打印日志，未来可能补充更严格的一致性保障。
 
 `decision_reached` 方法是触发这整个过程的入口点：
 
@@ -275,6 +293,14 @@ pub async fn decision_reached(
     // ...其余代码  
 }
 ```
+
+**关键点解析（Batcher::decision_reached）**
+
+* 入口负责在 **共识完成** 后处理执行产物：解析提案 ID → 获取执行结果 → 提交区块。  
+* 通过 `executed_proposals.lock().await.remove(&proposal_id)` 从缓存中取出异步执行结果，防止重复消费。  
+* 将 `block_execution_artifacts` 拆分为 `state_diff`、`address_to_nonce` 等多种结构，供后续 commit 方法用。  
+* 使用 `u64::try_from` 将交易数、拒绝交易数安全转换为指标，避免潜在溢出。  
+* 调用 `commit_proposal_and_block` 之后，函数还会继续广播共识结果、更新度量等（此处省略），实现 **职责分离**。
 
 ### Notes
 
