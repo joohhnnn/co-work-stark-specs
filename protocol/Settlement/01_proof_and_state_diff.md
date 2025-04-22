@@ -83,6 +83,13 @@ async fn update_state_calldata(
 }
 ```
 
+**关键点解析（update_state_calldata）**
+
+* 将原始 `program_output` / `onchain_data_hash` / `onchain_data_size` 转为 `U256`，匹配 Solidity ABI。  
+* 直接调用核心合约 `update_state`，无需 Blob，兼容所有以太坊节点。  
+* 双阶段日志（starting/completed）+ 交易哈希，方便链上追踪与告警。  
+* 返回十六进制格式的交易哈希字符串，供上层系统记录。
+
 ### 通过EIP-4844 blob发送
 
 ```rust
@@ -192,6 +199,14 @@ async fn update_state_with_blobs(
 }
 ```
 
+**关键点解析（update_state_with_blobs）**
+
+* `prepare_sidecar` 将 `state_diff` 打包为 **Blob + KZG 承诺/证明**，大幅降低 L1 calldata 成本。  
+* 动态估算 EIP-1559 与 Blob Gas 基础费率，并加安全裕度，防止价格跳变导致失败。  
+* 构造 `TxEip4844`，填充 `blob_versioned_hashes / max_fee_per_blob_gas`，完全兼容 Cancun 升级。  
+* 通过默认签名者签名，分别支持 **测试模式**（impersonate 账户）与 **生产模式**（raw tx）。  
+* 发送后调用 `wait_for_tx_finality` 等待最终性，确保状态根安全落链。
+
 ## 智能合约交互
 
 ### 合约接口
@@ -200,6 +215,11 @@ async fn update_state_with_blobs(
 function updateState(uint256[] calldata programOutput, uint256 onchainDataHash, uint256 onchainDataSize) external;
 function updateStateKzgDA(uint256[] calldata programOutput, bytes[] calldata kzgProofs) external;
 ```
+
+**关键点解析（合约接口）**
+
+* `updateState`：Calldata 路径，额外接收 `onchainDataHash / Size` 用于链上重放验证。  
+* `updateStateKzgDA`：Blob 路径，接收 `kzgProofs` 数组，保证数据可用性并绑定 Blob 承诺。  
 
 ### 客户端实现
 
@@ -258,6 +278,13 @@ async fn update_state_kzg(
         .map_err(StarknetValidityContractError::PendingTransactionError)
 }
 ```
+
+**关键点解析（客户端实现）**
+
+* 先执行 `estimate_gas` 获取精确 Gas 预算，再设置 `nonce / gas_price`，避免重放。  
+* Calldata 与 Blob 两条路径共用一套 Provider & Signer，便于维护。  
+* `update_state_kzg` 将 48 字节 KZG 证明封装为 `Bytes`，并打包进数组以符合合约 ABI。  
+* 所有函数返回 `TransactionReceipt`，上层可据此做事件解析与状态确认。
 
 ## 总结
 
