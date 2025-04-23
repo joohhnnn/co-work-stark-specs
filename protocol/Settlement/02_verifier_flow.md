@@ -57,6 +57,12 @@ require(
 );
 ```
 
+**关键点解析（安全参数校验）**
+
+* `numSecurityBits` 与 `minProofOfWorkBits` 共同决定整体安全级别。
+* 公式 `nQueries * logBlowupFactor + proofOfWorkBits ≥ numSecurityBits` 将 **查询随机性 + PoW** 转化为等效安全位。
+* 校验不通过即 `revert`，可在早期阻断无效证明，节省链上 gas。
+
 #### 3.1.3 验证执行顺序
 验证步骤按顺序执行，每个步骤都是必需的：
 
@@ -93,6 +99,13 @@ function initVerifierParams(uint256[] memory publicInput, uint256[] memory proof
 }
 ```
 
+**关键点解析（initVerifierParams）**
+
+* 首先检查 `proofParams` 长度，防止越界读取。
+* 解析 `logBlowupFactor`、`proofOfWorkBits` 并写入上下文数组 `ctx`。
+* 预分配固定长度 `ctx`，统一保存所有中间变量，减少内存申请。
+* `view` 关键字保证函数只读，不修改链上状态。
+
 ### 3.3 证明验证阶段
 1. 验证跟踪承诺
 ```solidity
@@ -118,6 +131,13 @@ function verifyProof(
 }
 ```
 
+**关键点解析（verifyProof）**
+
+* 通过 `initVerifierParams` 构造上下文后，依次调用各子验证步骤，符合流水线设计。
+* 将 Trace commitment 写入 `ctx[MM_TRACE_COMMITMENT]`，为后续 Merkle/FRI 使用提供基准。
+* 采用 "早失败" 策略：`oodsConsistencyCheck` 在高成本运算前快速发现错误。
+* 分层验证：先计算首个 FRI 层，再递归验证剩余层，降低一次性内存峰值。
+
 ### 3.4 FRI 验证阶段
 1. 验证 FRI 层
 ```solidity
@@ -132,6 +152,12 @@ function friVerifyLayers(uint256[] memory ctx) internal view virtual {
     );
 }
 ```
+
+**关键点解析（friVerifyLayers）**
+
+* 通过 `channelPtr` 读取交互通道状态，保证随机挑战一致性。
+* 校验结果与 `friStatementContract` 的链上声明哈希比对，防止离线伪造。
+* 若验证失败直接 `revert("INVALIDATED_FRI_STATEMENT")`，错误定位清晰。
 
 ### 3.5 Merkle 验证阶段
 1. 验证 Merkle 证明
@@ -150,6 +176,12 @@ function verifyMerkle(
     return root;
 }
 ```
+
+**关键点解析（verifyMerkle）**
+
+* 利用 `keccak256` 对待验证数据计算 statement 哈希，确保唯一性。
+* 调用 `merkleStatementContract.isValid` 做链上白名单校验，杜绝伪造根。
+* 返回通过验证的 `root` 供上层继续处理，实现函数式链式调用。
 
 ## 4. 安全性保证
 
@@ -179,6 +211,11 @@ uint256 immutable numSecurityBits;  // 典型值：80-128
 uint256 immutable minProofOfWorkBits;  // 典型值：20-30
 ```
 
+**关键点解析（安全参数常量）**
+
+* `immutable` 在部署时写死，节省一次存储读写 gas。
+* 给出推荐区间，方便运营者根据链上安全预算调整。
+
 ### 5.2 验证参数
 ```solidity
 // 最大查询数
@@ -190,6 +227,11 @@ uint256 constant internal MAX_FRI_STEPS = 10;
 // 最大支持的 FRI 步骤大小
 uint256 constant internal MAX_SUPPORTED_FRI_STEP_SIZE = 4;
 ```
+
+**关键点解析（验证参数常量）**
+
+* 对查询次数、FRI 迭代深度做上限限制，防止恶意膨胀证明文件。
+* 使用 `constant` 让编译器内联，进一步降低 gas 消耗。
 
 ## 6. 内存管理
 
@@ -205,6 +247,11 @@ uint256 constant internal MM_TRACE_COMMITMENT = 0x6;
 uint256 constant internal MM_FRI_QUEUE = 0x6d;
 ```
 
+**关键点解析（内存映射常量）**
+
+* 统一定义上下文数组的索引，避免散落的魔数。
+* 易于后续审计与升级时定位内存布局。
+
 ### 6.2 内存访问工具
 ```solidity
 function getPtr(uint256[] memory ctx, uint256 offset) internal pure returns (uint256) {
@@ -216,6 +263,12 @@ function getPtr(uint256[] memory ctx, uint256 offset) internal pure returns (uin
     return ctxPtr + offset * 0x20;
 }
 ```
+
+**关键点解析（getPtr）**
+
+* 检查 `offset` 越界，防止读取非法内存。
+* 通过内联 `assembly` 直接获取数组基址，减少多余计算。
+* 返回字节级指针供低层内存操作，兼顾效率与安全。
 
 ## 7. 总结
 

@@ -28,6 +28,12 @@ function initVerifierParams(uint256[] memory publicInput, uint256[] memory proof
 }
 ```
 
+**关键点解析（initVerifierParams）**
+
+* 早期校验 `proofParams` 长度与 FRI 步数，防止畸形输入耗费后续 gas。
+* 对 `proofOfWorkBits` 做上下限约束，兼顾安全性与验证成本。
+* 返回的 `ctx` 作为贯穿整个验证流程的上下文，保存中间状态。
+
 ### 2.2 验证失败点
 
 1. 参数验证失败
@@ -37,6 +43,11 @@ require(logBlowupFactor <= 16, "logBlowupFactor must be at most 16");
 require(logBlowupFactor >= 1, "logBlowupFactor must be at least 1");
 ```
 
+**关键点解析（参数范围检查）**
+
+* 将 Trace 扩展倍数 `logBlowupFactor` 限定在 \[1,16]，避免 gas 爆炸或安全不足。
+* 通过简单 `require` 提前失败，节省后续验证步骤。
+
 2. 工作量证明验证失败
 ```solidity
 function verifyProofOfWork(uint256 channelPtr, uint256 proofOfWorkBits) internal pure {
@@ -44,6 +55,11 @@ function verifyProofOfWork(uint256 channelPtr, uint256 proofOfWorkBits) internal
     require(proofOfWorkDigest < proofOfWorkThreshold, "Proof of work check failed.");
 }
 ```
+
+**关键点解析（verifyProofOfWork）**
+
+* 计算阈值 `2^{256-bits}`，bits 越大难度越高。
+* 与 `proofOfWorkDigest` 比较，超过阈值即失败，保证提交者付出相应算力。
 
 3. FRI 验证失败
 ```solidity
@@ -54,6 +70,12 @@ function friVerifyLayers(uint256[] memory ctx) internal view virtual {
     );
 }
 ```
+
+**关键点解析（friVerifyLayers）**
+
+* 通过外部 `friStatementContract` 验证组合多项式承诺。
+* 对数据做 `keccak256` 哈希，避免大型数组直接传递。
+* 任何层验证失败都抛出特定错误码，便于问题定位。
 
 4. Merkle 证明验证失败
 ```solidity
@@ -66,6 +88,11 @@ function verifyMerkle(
     require(merkleStatementContract.isValid(statement), "INVALIDATED_MERKLE_STATEMENT");
 }
 ```
+
+**关键点解析（verifyMerkle）**
+
+* 针对公共输入或内存队列的 Merkle 证明，确保叶子 → 根路径正确。
+* 通过外部合约 `merkleStatementContract` 独立复验，降低主验证器复杂度。
 
 ## 3. 失败处理流程
 
@@ -92,6 +119,12 @@ function verifyProof(
     friVerifyLayers(ctx);
 }
 ```
+
+**关键点解析（verifyProof）**
+
+* 统一调度各子验证步骤，顺序依赖保证前置条件已满足。
+* 使用 `ctx` 共享跨步骤数据，避免重复计算。
+* 任意子过程 `require` 失败即触发回滚，确保状态一致性。
 
 ### 3.3 状态回滚
 1. 所有中间状态被丢弃
@@ -120,6 +153,11 @@ require(proofOfWorkBits >= minProofOfWorkBits, "minimum proofOfWorkBits not sati
 require(merkleStatementContract.isValid(statement), "INVALIDATED_MERKLE_STATEMENT");
 ```
 
+**关键点解析（错误信息）**
+
+* 为每类错误提供明确字符串，方便前端与监控系统快速定位。
+* 统一使用 `require` 抛错风格，保持合约可读性。
+
 ### 5.2 资源管理
 - 早期失败检测
 - 及时释放资源
@@ -130,6 +168,11 @@ require(merkleStatementContract.isValid(statement), "INVALIDATED_MERKLE_STATEMEN
 event LogBool(bool val);
 event LogDebug(uint256 val);
 ```
+
+**关键点解析（日志记录）**
+
+* 利用事件将调试信息写入链上日志，供离线解析，不影响状态。
+* 区分布尔与数值日志，降低解析歧义。
 
 ## 6. 总结
 
