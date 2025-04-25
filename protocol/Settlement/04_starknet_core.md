@@ -26,6 +26,12 @@ function updateStateInternal(
 ) internal
 ```
 
+**关键点解析（updateStateInternal）**
+
+* 内部函数，由外部入口包装器调用，保证状态更新逻辑集中。  
+* `programOutput` 为 Cairo OS 生成的区块执行输出，包含状态根、消息、日志等。  
+* `stateTransitionFact` = `keccak256(proof_hash, state_diff_hash)`；上传 SHARP 后链上只需验证其有效性。
+
 1. 验证程序输出
    - 检查输出长度
    - 验证配置哈希
@@ -34,6 +40,11 @@ function updateStateInternal(
    require(programOutput.length > StarknetOutput.HEADER_SIZE, "STARKNET_OUTPUT_TOO_SHORT");
    require(programOutput[StarknetOutput.CONFIG_HASH_OFFSET] == configHash(), "INVALID_CONFIG_HASH");
    ```
+
+**关键点解析（程序输出校验）**
+
+* 双重 `require` 同时检查长度与配置版本，第一时间过滤格式错误或旧版本数据。  
+* `CONFIG_HASH_OFFSET` 锁定 Starknet OS 版本，避免不同版本输出混淆导致的安全隐患。
 
 2. 验证状态转换
    - 生成状态转换事实
@@ -44,6 +55,12 @@ function updateStateInternal(
    require(IFactRegistry(verifier()).isValid(sharpFact), "NO_STATE_TRANSITION_PROOF");
    emit LogStateTransitionFact(stateTransitionFact);
    ```
+
+**关键点解析（状态转换验证）**
+
+* `sharpFact` 将程序哈希与状态转移哈希绑定，确保证明与区块一一对应。  
+* 通过 `FactRegistry` 查询 SHARP 是否已验证对应证明。  
+* 事件日志便于外部索引服务追踪区块与证明匹配关系。
 
 3. 更新链上状态
    - 更新全局状态根
@@ -66,6 +83,12 @@ function updateStateInternal(
    );
    ```
 
+**关键点解析（消息处理）**
+
+* 单次遍历 `programOutput` 子数组，高效解析全部跨层消息。  
+* 返回新的 `outputOffset`，后续解析继续从正确位置开始。  
+* `collectorAddress` 收取消息费用，避免额外存储读写。
+
 5. 完成交易
    - 发出状态更新事件
    - 记录状态转换事实
@@ -86,6 +109,11 @@ updateStateInternal(programOutput, stateTransitionFact);
 state().checkNewBlockNumber(programOutput);
 ```
 
+**关键点解析（重入保护）**
+
+* 前后两次区块号校验确保整段状态更新不可重入。  
+* 阻止同一区块被多次写入或被并发调用篡改。
+
 ## 3. 核心组件
 
 ### 3.1 合约继承关系
@@ -99,6 +127,11 @@ contract Starknet is
     ContractInitializer,
     ProxySupport
 ```
+
+**关键点解析（继承关系）**
+
+* 多继承划分功能模块：治理、消息、升级、运营职责分离。  
+* `ProxySupport` 提供可升级机制，便于未来迁移。
 
 ### 3.2 重要状态变量
 - programHash: Starknet OS程序哈希
@@ -118,6 +151,11 @@ function updateState(
 ) external onlyOperator
 ```
 
+**关键点解析（updateState）**
+
+* Sequencer 对应的 L1 Operator 调用入口；`onlyOperator` 控制权限。  
+* `onchainDataHash/Size` 对应 StateDiff 数据可用性片段，支持分片上传。
+
 状态更新流程:
 1. 验证程序输出
 2. 检查区块号(防重入)
@@ -133,6 +171,11 @@ function updateStateKzgDA(
     bytes[] calldata kzgProofs
 ) external onlyOperator
 ```
+
+**关键点解析（updateStateKzgDA）**
+
+* 面向 Dencun 后 KZG blob DA 方案，引入 `kzgProofs` 批量验证可用性。  
+* 与 `updateState` 共享内部逻辑，只替换 DA 路径。
 
 KZG数据可用性验证流程:
 1. 验证程序输出
