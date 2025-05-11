@@ -27,6 +27,15 @@ public:
 };
 ```
 
+**关键点解析（TaskManager::ParallelFor）**
+
+* `start_idx` / `end_idx`：要并行遍历的 **闭区间索引范围**；内部会按任务粒度切分。
+* `func`：用户提供的回调，签名为 `void(const TaskInfo&)`，其中 `TaskInfo` 封装当前子任务的范围与线程本地上下文。
+* `max_chunk_size_for_lambda`：控制一次回调可处理的 **最大元素个数**，过大浪费 cache，过小增加调度开销。
+* `min_work_chunk`：当剩余工作量低于该阈值时直接串行处理，避免递归切分导致的线程争用。
+* 内部使用 **工作窃取(work-stealing) 线程池**：空闲线程可从其他线程队列中"偷"任务，实现负载均衡。
+* 通过互斥锁与条件变量实现队列同步，保证任务入队/出队的 **线程安全**。
+
 #### 任务队列实现
 - 当 `ParallelFor` 被调用时，新任务被添加到队列中
 - 任务在队列中等待，由线程池中的工作线程处理
@@ -47,6 +56,14 @@ public:
     );
 };
 ```
+
+**关键点解析（ParallelTableProver::AddSegmentForCommitment）**
+
+* 将一个大型 `segment` 切分为 `n_tasks_per_segment_` 份子段，每段大小≈`segment.size()/n_tasks_per_segment_`。
+* `masks` 用于按列筛选或置零，被 **按相同策略** 切分以保持对齐。
+* 通过 `TaskManager::ParallelFor` 并行计算每个子段的 **多项式承诺(commitment)**，提升 CPU 利用率。
+* 支持 **流水线化**：可在前一 segment 计算时异步提交下一段任务，最大化线程池吞吐。
+* 处理完所有子段后在主线程合并结果，生成整个 segment 的承诺值，以保证 **确定性** 与 **顺序一致性**。
 
 #### 并行处理实现
 - 将段分解为 `n_tasks_per_segment_` 个子段
