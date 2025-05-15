@@ -17,6 +17,12 @@ struct TraceEntry {
 };
 ```
 
+**关键点解析（TraceEntry）**
+
+* 记录单步执行时 3 个关键 CPU 寄存器：`ap` / `fp` / `pc`，便于重建完整执行状态。  
+* 使用 `FieldElementT` 泛型参数，使追踪可同时适配 **金田域** / **蒙哥马利域** 等不同字段实现。  
+* 结构体极简，避免冗余字段，提高 Trace 序列化效率。
+
 ### 主要功能：
 - 记录 CPU 寄存器的状态
 - 追踪程序执行位置
@@ -47,6 +53,14 @@ void CpuComponent<FieldElementT>::WriteTrace(
 }
 ```
 
+**关键点解析（CpuComponent::WriteTrace）**
+
+* 以 **指令索引** 为主键写入追踪，不依赖绝对时间，方便乱序/并行执行记录。  
+* 通过 `DecodedInstruction` 对 64bit 指令字进行解析，支持 Cairo 指令集多样操作。  
+* `ComputeDstAddr` 结合当前寄存器状态计算目标地址，实现 **寄存器间接寻址**。  
+* Trace 写入分三步：解码 → 读取操作数 → 更新寄存器 & 记录，保证单步原子性。  
+* 结合 `RangeCheckCell` 在运行时校验操作数范围，为后续 AIR 约束提供输入。
+
 ### 主要功能：
 - 指令解码和执行
 - 内存地址计算
@@ -73,6 +87,13 @@ public:
 };
 ```
 
+**关键点解析（Trace 类）**
+
+* 使用 **列优先(column-oriented)** 存储，每列对应一个寄存器/内存字段，利于向量化与压缩。  
+* `Length` = 执行步数，`Width` = 追踪列数，为 AIR 约束生成提供尺寸参数。  
+* `GetColumn` 返回 const 引用，避免额外拷贝，保障大规模追踪访问效率。  
+* 追踪数据可进一步序列化为 **Fri证明** 所需的多维矩阵输入。
+
 ### 主要功能：
 - 存储所有执行步骤的数据
 - 以列形式组织追踪数据
@@ -96,6 +117,13 @@ public:
     virtual Trace GetInteractionTrace() = 0;
 };
 ```
+
+**关键点解析（TraceContext 接口）**
+
+* 抽象追踪生成流程，使不同组件（CPU、Pedersen、RangeCheck）可实现各自的 `TraceContext`。  
+* `SetInteractionElements` 注入 **Fiat-Shamir 随机系数**，驱动多轮交互式证明非交互化。  
+* `GetInteractionTrace` 返回交互列，用于验证方重建对数展开的约束多项式。  
+* 通过纯虚接口 + 工厂方法，可根据证明规模动态选择 **单线程 / 并行** 实现。
 
 ### 主要功能：
 - 初始化追踪生成参数
