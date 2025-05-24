@@ -6,11 +6,11 @@ Madara实现了两种将STARK证明和状态差异（State Diff）发送到以�
 
 1. **通过calldata发送**  
    使用`update_state_calldata`方法，将状态数据直接包含在交易的calldata中。  
-   文件位置：`orchestrator/crates/settlement-clients/ethereum/src/lib.rs:185-210`
+   [lib.rs:185-210](https://github.com/madara-alliance/madara/blob/2c88da11/orchestrator/crates/settlement-clients/ethereum/src/lib.rs#L185-L210)
 
 2. **通过EIP-4844 blob发送**  
    使用`update_state_with_blobs`方法，通过更高效的数据blob机制发送状态差异。  
-   文件位置：`orchestrator/crates/settlement-clients/ethereum/src/lib.rs:213-316`
+   [lib.rs:213-316](https://github.com/madara-alliance/madara/blob/2c88da11/orchestrator/crates/settlement-clients/ethereum/src/lib.rs#L213-L316)
 
 ## 详细实现流程
 
@@ -54,6 +54,8 @@ Madara实现了两种将STARK证明和状态差异（State Diff）发送到以�
 
 ### 通过calldata发送
 
+[lib.rs#L185-L212](https://github.com/madara-alliance/madara/blob/b6c0651f98df32ddaa073c41ad95326bbd1ca846/orchestrator/crates/settlement-clients/ethereum/src/lib.rs#L185-L212)
+
 ```rust
 async fn update_state_calldata(
     &self,
@@ -91,6 +93,9 @@ async fn update_state_calldata(
 * 返回十六进制格式的交易哈希字符串，供上层系统记录。
 
 ### 通过EIP-4844 blob发送
+
+[lib.rs#L213-L316](https://github.com/madara-alliance/madara/blob/b6c0651f98df32ddaa073c41ad95326bbd1ca846/orchestrator/crates/settlement-clients/ethereum/src/lib.rs#L213-L316)
+
 
 ```rust
 async fn update_state_with_blobs(
@@ -211,6 +216,8 @@ async fn update_state_with_blobs(
 
 ### 合约接口
 
+[validity_interface.rs:44-60](https://github.com/madara-alliance/madara/blob/2c88da11/orchestrator/crates/settlement-clients/ethereum/src/clients/interfaces/validity_interface.rs#L44-L60)
+
 ```solidity
 function updateState(uint256[] calldata programOutput, uint256 onchainDataHash, uint256 onchainDataSize) external;
 function updateStateKzgDA(uint256[] calldata programOutput, bytes[] calldata kzgProofs) external;
@@ -222,6 +229,8 @@ function updateStateKzgDA(uint256[] calldata programOutput, bytes[] calldata kzg
 * `updateStateKzgDA`：Blob 路径，接收 `kzgProofs` 数组，保证数据可用性并绑定 Blob 承诺。  
 
 ### 客户端实现
+
+[validity_interface.rs:70-140](https://github.com/madara-alliance/madara/blob/2c88da11/orchestrator/crates/settlement-clients/ethereum/src/clients/interfaces/validity_interface.rs#L70-L140)
 
 ```rust
 async fn update_state(
