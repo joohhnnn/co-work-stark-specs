@@ -13,6 +13,8 @@
 任务队列系统由 `TaskManager` 类实现，它维护一个任务队列和线程池。
 
 #### TaskManager 类定义
+[task_manager.h:40-80](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/utils/task_manager.h#L40-L80)
+
 ```cpp
 class TaskManager {
 public:
@@ -46,6 +48,8 @@ public:
 并行处理由 `ParallelTableProver` 类实现，它将大的段分解为多个子段进行并行处理。
 
 #### ParallelTableProver 类定义
+[parallel_table_prover.h:20-60](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/commitment_scheme/parallel_table_prover.h#L20-L60)
+
 ```cpp
 class ParallelTableProver {
 public:
@@ -101,10 +105,3 @@ public:
 3. **线程安全**
    - 使用互斥锁和条件变量
    - 确保多线程环境下的数据一致性
-
-## 相关代码链接
-
-- [TaskManager 队列系统](https://github.com/starkware-libs/stone-prover/blob/main/src/starkware/utils/task_manager.h)
-- [TaskManager 实现](https://github.com/starkware-libs/stone-prover/blob/main/src/starkware/utils/task_manager.cc)
-- [ParallelTableProver 定义](https://github.com/starkware-libs/stone-prover/blob/main/src/starkware/commitment_scheme/parallel_table_prover.h)
-- [ParallelTableProver 实现](https://github.com/starkware-libs/stone-prover/blob/main/src/starkware/commitment_scheme/parallel_table_prover.cc)
