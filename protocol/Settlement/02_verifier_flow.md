@@ -45,6 +45,8 @@ StarkEx 验证器系统是一个复杂的多层架构，用于验证 STARK 证�
 3. 确保完整性：每个验证步骤都有其特定的安全目标
 
 #### 3.1.2 安全参数
+[StarkVerifier.sol:60-80](https://github.com/starkware-libs/starkex-contracts/blob/aecf37f2/evm-verifier/solidity/contracts/StarkVerifier.sol#L60-L80)
+
 ```solidity
 // 安全位数要求
 uint256 immutable numSecurityBits;  // 80-128位
@@ -80,6 +82,8 @@ require(
 
 ### 3.2 初始化阶段
 1. 验证器参数初始化
+[StarkVerifier.sol:90-120](https://github.com/starkware-libs/starkex-contracts/blob/aecf37f2/evm-verifier/solidity/contracts/StarkVerifier.sol#L90-L120)
+
 ```solidity
 function initVerifierParams(uint256[] memory publicInput, uint256[] memory proofParams)
     internal
@@ -107,7 +111,8 @@ function initVerifierParams(uint256[] memory publicInput, uint256[] memory proof
 * `view` 关键字保证函数只读，不修改链上状态。
 
 ### 3.3 证明验证阶段
-1. 验证跟踪承诺
+[StarkVerifier.sol:495-530](https://github.com/starkware-libs/starkex-contracts/blob/aecf37f2/evm-verifier/solidity/contracts/StarkVerifier.sol#L495-L530)
+
 ```solidity
 function verifyProof(
     uint256[] memory proofParams,
@@ -139,7 +144,8 @@ function verifyProof(
 * 分层验证：先计算首个 FRI 层，再递归验证剩余层，降低一次性内存峰值。
 
 ### 3.4 FRI 验证阶段
-1. 验证 FRI 层
+[Fri.sol:30-60](https://github.com/starkware-libs/starkex-contracts/blob/aecf37f2/evm-verifier/solidity/contracts/Fri.sol#L30-L60)
+
 ```solidity
 function friVerifyLayers(uint256[] memory ctx) internal view virtual {
     uint256 channelPtr = getChannelPtr(ctx);
@@ -160,7 +166,8 @@ function friVerifyLayers(uint256[] memory ctx) internal view virtual {
 * 若验证失败直接 `revert("INVALIDATED_FRI_STATEMENT")`，错误定位清晰。
 
 ### 3.5 Merkle 验证阶段
-1. 验证 Merkle 证明
+[MerkleStatementVerifier.sol:10-30](https://github.com/starkware-libs/starkex-contracts/blob/aecf37f2/evm-verifier/solidity/contracts/MerkleStatementVerifier.sol#L10-L30)
+
 ```solidity
 function verifyMerkle(
     uint256 channelPtr,
@@ -253,6 +260,8 @@ uint256 constant internal MM_FRI_QUEUE = 0x6d;
 * 易于后续审计与升级时定位内存布局。
 
 ### 6.2 内存访问工具
+[MemoryAccessUtils.sol:6-20](https://github.com/starkware-libs/starkex-contracts/blob/aecf37f2/evm-verifier/solidity/contracts/MemoryAccessUtils.sol#L6-L20)
+
 ```solidity
 function getPtr(uint256[] memory ctx, uint256 offset) internal pure returns (uint256) {
     uint256 ctxPtr;

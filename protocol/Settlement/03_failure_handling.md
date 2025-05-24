@@ -7,6 +7,9 @@
 ## 2. 失败检测机制
 
 ### 2.1 早期检测
+
+[StarkVerifier.sol:90-120](https://github.com/starkware-libs/starkex-contracts/blob/aecf37f2/evm-verifier/solidity/contracts/StarkVerifier.sol#L90-L120)
+
 ```solidity
 function initVerifierParams(uint256[] memory publicInput, uint256[] memory proofParams)
     internal
@@ -37,6 +40,9 @@ function initVerifierParams(uint256[] memory publicInput, uint256[] memory proof
 ### 2.2 验证失败点
 
 1. 参数验证失败
+
+[StarkVerifier.sol:115-130](https://github.com/starkware-libs/starkex-contracts/blob/aecf37f2/evm-verifier/solidity/contracts/StarkVerifier.sol#L115-L130)
+
 ```solidity
 // 参数范围检查
 require(logBlowupFactor <= 16, "logBlowupFactor must be at most 16");
@@ -49,6 +55,9 @@ require(logBlowupFactor >= 1, "logBlowupFactor must be at least 1");
 * 通过简单 `require` 提前失败，节省后续验证步骤。
 
 2. 工作量证明验证失败
+
+[VerifierChannel.sol:200-220](https://github.com/starkware-libs/starkex-contracts/blob/aecf37f2/evm-verifier/solidity/contracts/VerifierChannel.sol#L200-L220)
+
 ```solidity
 function verifyProofOfWork(uint256 channelPtr, uint256 proofOfWorkBits) internal pure {
     uint256 proofOfWorkThreshold = uint256(1) << (256 - proofOfWorkBits);
@@ -62,6 +71,9 @@ function verifyProofOfWork(uint256 channelPtr, uint256 proofOfWorkBits) internal
 * 与 `proofOfWorkDigest` 比较，超过阈值即失败，保证提交者付出相应算力。
 
 3. FRI 验证失败
+
+[Fri.sol:30-60](https://github.com/starkware-libs/starkex-contracts/blob/aecf37f2/evm-verifier/solidity/contracts/Fri.sol#L30-L60)
+
 ```solidity
 function friVerifyLayers(uint256[] memory ctx) internal view virtual {
     require(
@@ -78,6 +90,9 @@ function friVerifyLayers(uint256[] memory ctx) internal view virtual {
 * 任何层验证失败都抛出特定错误码，便于问题定位。
 
 4. Merkle 证明验证失败
+
+[MerkleStatementVerifier.sol:10-30](https://github.com/starkware-libs/starkex-contracts/blob/aecf37f2/evm-verifier/solidity/contracts/MerkleStatementVerifier.sol#L10-L30)
+
 ```solidity
 function verifyMerkle(
     uint256 channelPtr,
@@ -103,6 +118,9 @@ function verifyMerkle(
 3. 拒绝整个证明和状态差异
 
 ### 3.2 错误传播
+
+[StarkVerifier.sol:495-525](https://github.com/starkware-libs/starkex-contracts/blob/aecf37f2/evm-verifier/solidity/contracts/StarkVerifier.sol#L495-L525)
+
 ```solidity
 function verifyProof(
     uint256[] memory proofParams,
