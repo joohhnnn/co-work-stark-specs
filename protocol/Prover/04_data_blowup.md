@@ -8,6 +8,8 @@ STARK 证明系统通过执行追踪(Execution Trace)来记录和验证交易执
 
 ### 2.1 执行追踪生成
 
+[stark.cc:400-420](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/stark/stark.cc#L400-L420)
+
 ```cpp
 void StarkProver::ProveStark(std::unique_ptr<TraceContext> trace_context) {
   // 生成执行追踪
@@ -31,7 +33,7 @@ void StarkProver::ProveStark(std::unique_ptr<TraceContext> trace_context) {
 
 ### 2.2 数据扩展与混合
 
-扩展与混合由 `DilutedCheckComponentProverContext1::WriteTrace` 驱动，以下为核心片段：
+[diluted_check.inl:50-80](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/air/components/diluted_check/diluted_check.inl#L50-L80)
 
 ```cpp
 void DilutedCheckComponentProverContext1<FieldElementT>::WriteTrace(
@@ -65,6 +67,8 @@ void DilutedCheckComponentProverContext1<FieldElementT>::WriteTrace(
 ### 2.3 Out-of-Domain Sampling (OODS)
 
 OODS 是验证过程的关键部分,在 `src/starkware/stark/oods.cc` 中实现:
+
+[oods.cc:180-210](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/stark/oods.cc#L180-L210)
 
 ```cpp
 std::vector<std::tuple<size_t, FieldElement, FieldElement>> VerifyOods(
@@ -109,6 +113,8 @@ std::vector<std::tuple<size_t, FieldElement, FieldElement>> VerifyOods(
 ### 4.1 多项式分解器
 
 在 `src/starkware/composition_polynomial/breaker.h` 中定义:
+
+[breaker.h:20-45](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/composition_polynomial/breaker.h#L20-L45)
 
 ```cpp
 class PolynomialBreaker {

@@ -8,6 +8,8 @@
 
 `TraceEntry` 结构体是执行追踪的基本单位，它记录了每个指令执行时的 CPU 状态。
 
+[trace_utils.h:60-80](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/cairo/lang/vm/cpp/trace_utils.h#L60-L80)
+
 ```cpp
 template <typename FieldElementT>
 struct TraceEntry {
@@ -31,6 +33,8 @@ struct TraceEntry {
 ## 2. WriteTrace 方法
 
 `WriteTrace` 方法是执行追踪的核心实现，负责执行指令并记录详细的执行过程。
+
+[cpu_component.h:70-100](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/air/cpu/component/cpu_component.h#L70-L100)
 
 ```cpp
 template <typename FieldElementT>
@@ -73,6 +77,8 @@ void CpuComponent<FieldElementT>::WriteTrace(
 
 `Trace` 类存储完整的执行追踪数据，以列的形式组织字段元素向量。
 
+[trace.h:20-60](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/air/trace.h#L20-L60)
+
 ```cpp
 class Trace {
 public:
@@ -103,6 +109,8 @@ public:
 ## 4. TraceContext 类
 
 `TraceContext` 类管理整个追踪生成过程，提供追踪生成的上下文环境。
+
+[trace_context.h:20-55](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/air/trace_context.h#L20-L55)
 
 ```cpp
 class TraceContext {

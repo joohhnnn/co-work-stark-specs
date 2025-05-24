@@ -16,8 +16,9 @@
 
 ## 3. 核心结构体（Python 实现示例）
 
+[state.py:430-455](https://github.com/starkware-libs/cairo-lang/blob/master/src/starkware/starknet/business_logic/fact_state/state.py#L430-L455)
+
 ```python
-430:455:starkex-contracts/cairo-lang/src/starkware/starknet/business_logic/fact_state/state.py
 @marshmallow_dataclass.dataclass(frozen=True)
 class StateDiff(EverestStateDiff, DBObject):
     address_to_class_hash: Mapping[int, int]
