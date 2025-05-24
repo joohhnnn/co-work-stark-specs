@@ -19,6 +19,9 @@ Starknet Core是Starknet系统的核心合约,负责:
 6. 将交易添加到以太坊区块
 
 ### 2.2 详细步骤
+
+[Starknet.sol:280-315](https://github.com/starkware-libs/cairo-lang/blob/ab8be404/src/starkware/starknet/solidity/Starknet.sol#L280-L315)
+
 ```solidity
 function updateStateInternal(
     uint256[] calldata programOutput, 
@@ -41,6 +44,8 @@ function updateStateInternal(
    require(programOutput[StarknetOutput.CONFIG_HASH_OFFSET] == configHash(), "INVALID_CONFIG_HASH");
    ```
 
+[Starknet.sol:300-310](https://github.com/starkware-libs/cairo-lang/blob/ab8be404/src/starkware/starknet/solidity/Starknet.sol#L300-L310)
+
 **关键点解析（程序输出校验）**
 
 * 双重 `require` 同时检查长度与配置版本，第一时间过滤格式错误或旧版本数据。  
@@ -56,6 +61,8 @@ function updateStateInternal(
    emit LogStateTransitionFact(stateTransitionFact);
    ```
 
+[Starknet.sol:315-330](https://github.com/starkware-libs/cairo-lang/blob/ab8be404/src/starkware/starknet/solidity/Starknet.sol#L315-L330)
+
 **关键点解析（状态转换验证）**
 
 * `sharpFact` 将程序哈希与状态转移哈希绑定，确保证明与区块一一对应。  
@@ -70,6 +77,8 @@ function updateStateInternal(
    state().update(programOutput);
    ```
 
+[Starknet.sol:320-325](https://github.com/starkware-libs/cairo-lang/blob/ab8be404/src/starkware/starknet/solidity/Starknet.sol#L320-L325)
+
 4. 处理消息
    - 处理L2到L1消息
    - 处理L1到L2消息
@@ -82,6 +91,8 @@ function updateStateInternal(
        collectorAddress
    );
    ```
+
+[Output.sol:90-115](https://github.com/starkware-libs/cairo-lang/blob/ab8be404/src/starkware/starknet/solidity/Output.sol#L90-L115)
 
 **关键点解析（消息处理）**
 
@@ -98,6 +109,9 @@ function updateStateInternal(
    ```
 
 ### 2.3 重入保护
+
+[Starknet.sol:340-360](https://github.com/starkware-libs/cairo-lang/blob/ab8be404/src/starkware/starknet/solidity/Starknet.sol#L340-L360)
+
 ```solidity
 // 在状态更新开始时检查区块号
 state().checkPrevBlockNumber(programOutput);
@@ -117,6 +131,9 @@ state().checkNewBlockNumber(programOutput);
 ## 3. 核心组件
 
 ### 3.1 合约继承关系
+
+[Starknet.sol:10-30](https://github.com/starkware-libs/cairo-lang/blob/ab8be404/src/starkware/starknet/solidity/Starknet.sol#L10-L30)
+
 ```solidity
 contract Starknet is
     Identity,
@@ -143,6 +160,9 @@ contract Starknet is
 ## 4. 主要功能
 
 ### 4.1 状态更新
+
+[Starknet.sol:410-440](https://github.com/starkware-libs/cairo-lang/blob/ab8be404/src/starkware/starknet/solidity/Starknet.sol#L410-L440)
+
 ```solidity
 function updateState(
     uint256[] calldata programOutput,
@@ -165,6 +185,9 @@ function updateState(
 6. 处理L1/L2消息
 
 ### 4.2 KZG数据可用性
+
+[Starknet.sol:448-480](https://github.com/starkware-libs/cairo-lang/blob/ab8be404/src/starkware/starknet/solidity/Starknet.sol#L448-L480)
+
 ```solidity
 function updateStateKzgDA(
     uint256[] calldata programOutput, 
@@ -192,6 +215,7 @@ KZG数据可用性验证流程:
 ## 5. 安全机制
 
 ### 5.1 重入保护
+
 ```solidity
 state().checkPrevBlockNumber(programOutput);
 // ... 状态更新操作 ...
