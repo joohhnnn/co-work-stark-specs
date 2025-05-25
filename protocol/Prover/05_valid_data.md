@@ -13,6 +13,8 @@
   - 生成完整的STARK证明
   - 验证追踪数据的完整性
 
+[stark.cc:400-430](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/stark/stark.cc#L400-L430)
+
 ```cpp
 void StarkProver::ProveStark(std::unique_ptr<TraceContext> trace_context) {
   // 生成执行追踪
@@ -40,6 +42,8 @@ void StarkProver::ProveStark(std::unique_ptr<TraceContext> trace_context) {
   - 将执行追踪数据"blow up and mix"
   - 通过低度扩展确保数据完整性
   - 实现组合多项式评估
+
+[diluted_check.inl:50-80](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/air/components/diluted_check/diluted_check.inl#L50-L80)
 
 ```cpp
 void DilutedCheckComponentProverContext1<FieldElementT>::WriteTrace(
@@ -74,6 +78,8 @@ void DilutedCheckComponentProverContext1<FieldElementT>::WriteTrace(
   - 从扩展数据中选择随机样本
   - 确保采样的随机性和代表性
   - 为证明生成提供基础数据
+
+[committed_trace.cc:210-235](https://github.com/starkware-libs/stone-prover/blob/1414a545/src/starkware/stark/committed_trace.cc#L210-L235)
 
 ```cpp
 std::map<RowCol, FieldElement> data_responses =
