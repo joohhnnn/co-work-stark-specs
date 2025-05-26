@@ -282,16 +282,3 @@ function getPtr(uint256[] memory ctx, uint256 offset) internal pure returns (uin
 ## 7. 总结
 
 StarkEx 验证器系统通过分层设计和多个验证组件，实现了高效且安全的 STARK 证明验证。系统从高级的 GpsStatementVerifier 开始，通过 CairoVerifierContract 和 StarkVerifier 进行核心验证，最后使用 FriStatementVerifier 和 MerkleStatementContract 确保证明的完整性和正确性。这种设计不仅保证了验证的可靠性，还提供了良好的可扩展性和维护性。
-
-### 7.1 主要优势
-1. 模块化设计
-2. 高度安全性
-3. 可扩展性
-4. 维护性
-5. 性能优化
-
-### 7.2 应用场景
-1. 区块链交易验证
-2. 智能合约执行验证
-3. 状态转换验证
-4. 零知识证明验证
