@@ -1,17 +1,50 @@
 # co-work-stark-specs
 
-先中文版，后续统一通过AI翻译成英文版
+> 本仓库旨在对 Starknet 协议实现中的核心组件进行系统性拆解与说明。
 
-临时仓库 积累一定量的内容后进行迁移，并公开继续构建
+下列文档按照推荐的阅读顺序排列：
 
-任务先都写在已经创建的文件里，后续进行补充。
+## First of First
+- [First of First](firstOfFirst.md)
 
-从sequencer入手（到底有几个版本？） 粗略浏览： Blockifier 和 Starknet_in_Rust
+## Sequencer
+1. [Sequencer Overview](protocol/Sequencer/01_sequencer_overview.md)
+2. [Mempool](protocol/Sequencer/02_mempool.md)
+3. [Transaction Flow](protocol/Sequencer/03_transaction_flow.md)
+4. [Block Sealing](protocol/Sequencer/04_block_sealing.md)
+5. [Consensus](protocol/Sequencer/05_consensus.md)
 
-和几个官方的人建立了联系，后续进行几次会议确定流程
+## Prover
+1. [Prover Line-up](protocol/Prover/01_lineup.md)
+2. [Execution Trace](protocol/Prover/02_execution_trace.md)
+3. [State Diff](protocol/Prover/03_state_diff.md)
+4. [Data Blow-up](protocol/Prover/04_data_blowup.md)
+5. [Valid Data](protocol/Prover/05_valid_data.md)
 
-资源： https://book.starknet.io/ch03-02-sequencers.html https://www.spaceshard.io/blog/blog-sequencers-nodes-starknet
+## Settlement
+1. [Proof & State Diff](protocol/Settlement/01_proof_and_state_diff.md)
+2. [Verifier Flow](protocol/Settlement/02_verifier_flow.md)
+3. [Failure Handling](protocol/Settlement/03_failure_handling.md)
+4. [Starknet Core](protocol/Settlement/04_starknet_core.md)
+5. [Finalized](protocol/Settlement/05_finalized.md)
 
-https://github.com/starkware-libs/stone-prover（初步认定官方版，来自discord titan 不可靠） https://github.com/starkware-libs/sequencer（初步认定官方版，来自discord titan 极其不可靠，甚至没有readme） https://github.com/keep-starknet-strange/madara（官方推的sequncer 不确定） https://github.com/lambdaclass/starknet_stack/tree/main/sequencer（官方推的sequncer 不确定）
+## Governance
+- [Governance](governance/governance.md)
+- [Governance Demo](governance/governanceDEMO.md)
 
-目前研究感觉内容有限复杂，经过讨论，我们可能会舍弃部分内容，比如具体的ZK验证（难度太大），Cairo语言（太偏应用层）等内容，然后内容横跨太多仓库了，比如sharp都没有开源。有点难度，后续再思索一下怎么把这个东西穿起来吧。
+## Chore (补充资料)
+- [Engine API](protocol/Chore/Engine-API.md)
+- [Cairo VM](protocol/Chore/cairo-vm.md)
+- [Derivation](protocol/Chore/derivation.md)
+- [Deposit](protocol/Chore/deposit.md)
+- [Withdraw](protocol/Chore/withdraw.md)
+- [Madara Data Submission Job](protocol/Chore/madara-Data%20Submission%20Job.md)
+- [Mastering the Stone Prover for Developers](protocol/Chore/Mastering%20the%20Stone%20Prover%20for%20Developers.md)
+- [Starknet Version History](protocol/Chore/starknetVersionHistory.md)
+
+## Glossary
+- [术语表](glossary.md)
+
+---
+
+如有任何问题或建议，欢迎 Issue 或 PR。
