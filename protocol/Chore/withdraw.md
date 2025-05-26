@@ -83,7 +83,4 @@ SpaceShard 提供的 **一键提现** 服务可自动完成第 3.3 步，流程�
 1. 在 StarkGate 提现界面勾选 "Use the automatic withdrawal service by SpaceShard"。
 2. 额外支付一笔小额 L2 ETH 作为服务费。
 3. 服务端检测到 L1 状态后自动为你提交 `withdraw`，无需手动领取。
-
-> 优点：省去等待与二次交互；缺点：需额外支付服务费，且当前仅支持 ETH、USDC、USDT、WBTC。
-
 ---

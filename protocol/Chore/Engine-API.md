@@ -56,5 +56,3 @@ pub struct DecisionReachedInput { proposal_id: ProposalId }
 ### 5. 未来演进
 * `staking` 阶段去中心化后，多个 Sequencer / Validator 将通过上述通道各自驱动本地执行层；共识算法计划与 STRK 质押合并，接口层保持不变。
 * 社区还有 [madara](https://github.com/keep-starknet-strange/madara) 等独立实现；它们通常复用相同的 gRPC schema，以便快速接入新的共识客户端。
-
-> **小结**：StarkNet 把"谁生产区块"（Apollo Consensus）与"如何执行 Cairo"（Batcher）彻底分离，通过一套 protobuf-定义的流式消息实现模块化通信，这与以太坊 Merge 之后的 Engine API 极为相似，但针对 ZK-Rollup 的密集计算与批量证明场景进行了定制化设计。
