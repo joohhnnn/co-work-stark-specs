@@ -1,6 +1,4 @@
-存放一切讲解的时候遇到的名次解释，放入这里，并在文章的相关位置引入链接 参考 https://github.com/ethereum-optimism/specs/blob/main/specs/glossary.md#glossary
-
-## 目录
+# 目录
 - [General Terms](#general-terms)
 - [Sequencing](#sequencing)
 - [其他](#其他（随着protocol目录下的内容更新）)
